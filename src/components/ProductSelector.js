@@ -51,30 +51,51 @@ export class ProductSelector {
 
   createContainer() {
     const container = document.createElement('div');
+
     container.className = CSS_CLASSES.CONTAINER;
+
     return container;
   }
 
   createSelectElement() {
     const select = document.createElement('select');
+
     select.id = ELEMENT_IDS.PRODUCT_SELECT;
     select.className = CSS_CLASSES.SELECT;
+
     return select;
   }
 
   createAddToCartButton() {
     const button = document.createElement('button');
+
     button.id = ELEMENT_IDS.ADD_TO_CART;
     button.innerHTML = MESSAGES.ADD_TO_CART;
     button.className = CSS_CLASSES.BUTTON;
+
     return button;
   }
 
   createStockInfoElement() {
     const stockInfo = document.createElement('div');
+
     stockInfo.id = ELEMENT_IDS.STOCK_STATUS;
     stockInfo.className = CSS_CLASSES.STOCK_INFO;
+
     return stockInfo;
+  }
+
+  createProductOption(product) {
+    const option = document.createElement('option');
+    option.value = product.id;
+
+    if (product.quantity === 0) {
+      this.setOutOfStockOption(option, product);
+    } else {
+      this.setInStockOption(option, product);
+    }
+
+    return option;
   }
 
   updateOptions(productList) {
@@ -92,19 +113,6 @@ export class ProductSelector {
     });
 
     this.updateSelectBorderColor(totalStock);
-  }
-
-  createProductOption(product) {
-    const option = document.createElement('option');
-    option.value = product.id;
-
-    if (product.quantity === 0) {
-      this.setOutOfStockOption(option, product);
-    } else {
-      this.setInStockOption(option, product);
-    }
-
-    return option;
   }
 
   setOutOfStockOption(option, product) {
