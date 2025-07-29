@@ -56,11 +56,10 @@ export function calculateFinalAmount(subtotal, totalAmount, itemCount) {
   return finalAmount;
 }
 
-// 장바구니 요약 정보 생성
-export function generateCartSummary(cartItems, productList, subtotal, itemDiscounts, itemCount, finalAmount) {
+// 개별 상품 정보 수집
+function collectSummaryItems(cartItems, productList) {
   const summaryItems = [];
 
-  // 개별 상품 정보
   for (let i = 0; i < cartItems.length; i++) {
     const currentProduct = productList.find((p) => p.id === cartItems[i].id);
     if (!currentProduct) continue;
@@ -76,37 +75,75 @@ export function generateCartSummary(cartItems, productList, subtotal, itemDiscou
     });
   }
 
-  // 할인 정보
-  const discountInfo = [];
+  return summaryItems;
+}
 
-  // 대량구매 할인
+// 대량구매 할인 정보 생성
+function createBulkDiscountInfo(itemCount) {
   const bulkDiscount = calculateBulkDiscount(itemCount);
+
   if (bulkDiscount > 0) {
-    discountInfo.push({
+    return {
       type: 'bulk',
       name: '🎉 대량구매 할인 (30개 이상)',
       rate: '-25%',
-    });
+    };
   }
 
-  // 개별 상품 할인
-  itemDiscounts.forEach((item) => {
-    discountInfo.push({
-      type: 'individual',
-      name: `${item.name} (10개↑)`,
-      rate: `-${(item.discountRate * 100).toFixed(0)}%`,
-    });
-  });
+  return null;
+}
 
-  // 화요일 할인
+// 개별 상품 할인 정보 생성
+function createIndividualDiscountInfo(itemDiscounts) {
+  return itemDiscounts.map((item) => ({
+    type: 'individual',
+    name: `${item.name} (10개↑)`,
+    rate: `-${(item.discountRate * 100).toFixed(0)}%`,
+  }));
+}
+
+// 화요일 할인 정보 생성
+function createTuesdayDiscountInfo() {
   const tuesdayDiscount = calculateTuesdayDiscount();
+
   if (tuesdayDiscount > 0) {
-    discountInfo.push({
+    return {
       type: 'tuesday',
       name: '🌟 화요일 추가 할인',
       rate: '-10%',
-    });
+    };
   }
+
+  return null;
+}
+
+// 할인 정보 수집
+function collectDiscountInfo(itemDiscounts, itemCount) {
+  const discountInfo = [];
+
+  // 대량구매 할인
+  const bulkDiscountInfo = createBulkDiscountInfo(itemCount);
+  if (bulkDiscountInfo) {
+    discountInfo.push(bulkDiscountInfo);
+  }
+
+  // 개별 상품 할인
+  const individualDiscountInfo = createIndividualDiscountInfo(itemDiscounts);
+  discountInfo.push(...individualDiscountInfo);
+
+  // 화요일 할인
+  const tuesdayDiscountInfo = createTuesdayDiscountInfo();
+  if (tuesdayDiscountInfo) {
+    discountInfo.push(tuesdayDiscountInfo);
+  }
+
+  return discountInfo;
+}
+
+// 장바구니 요약 정보 생성
+export function generateCartSummary(cartItems, productList, subtotal, itemDiscounts, itemCount, finalAmount) {
+  const summaryItems = collectSummaryItems(cartItems, productList);
+  const discountInfo = collectDiscountInfo(itemDiscounts, itemCount);
 
   return { summaryItems, discountInfo };
 }
