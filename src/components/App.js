@@ -90,45 +90,58 @@ export class App {
   }
 
   setupAutoSales() {
-    // 번개세일 설정
+    this.setupLightningSale();
+    this.setupRecommendationSale();
+  }
+
+  setupLightningSale() {
     const lightningDelay = Math.random() * 10000;
     setTimeout(() => {
       setInterval(() => {
-        const luckyIndex = Math.floor(Math.random() * this.productList.length);
-        const luckyProduct = this.productList[luckyIndex];
-
-        if (applyLightningSale(luckyProduct)) {
-          alert('⚡번개세일! ' + luckyProduct.name + '이(가) 20% 할인 중입니다!');
-          this.updateProductSelectorOptions();
-          this.updatePricesInCart();
-        }
+        this.triggerLightningSale();
       }, 30000);
     }, lightningDelay);
+  }
 
-    // 추천할인 설정
+  setupRecommendationSale() {
     setTimeout(() => {
       setInterval(() => {
-        if (this.lastSelectedProduct) {
-          let suggestedProduct = null;
-          for (let k = 0; k < this.productList.length; k++) {
-            if (
-              this.productList[k].id !== this.lastSelectedProduct &&
-              this.productList[k].quantity > 0 &&
-              !this.productList[k].suggestSale
-            ) {
-              suggestedProduct = this.productList[k];
-              break;
-            }
-          }
-
-          if (suggestedProduct && applyRecommendationSale(suggestedProduct)) {
-            alert('💝 ' + suggestedProduct.name + '은(는) 어떠세요? 지금 구매하시면 5% 추가 할인!');
-            this.updateProductSelectorOptions();
-            this.updatePricesInCart();
-          }
-        }
+        this.triggerRecommendationSale();
       }, 60000);
     }, Math.random() * 20000);
+  }
+
+  triggerLightningSale() {
+    const luckyIndex = Math.floor(Math.random() * this.productList.length);
+    const luckyProduct = this.productList[luckyIndex];
+
+    if (applyLightningSale(luckyProduct)) {
+      alert('⚡번개세일! ' + luckyProduct.name + '이(가) 20% 할인 중입니다!');
+      this.updateProductSelectorOptions();
+      this.updatePricesInCart();
+    }
+  }
+
+  triggerRecommendationSale() {
+    if (!this.lastSelectedProduct) return;
+
+    const suggestedProduct = this.findSuggestedProduct();
+
+    if (suggestedProduct && applyRecommendationSale(suggestedProduct)) {
+      alert('💝 ' + suggestedProduct.name + '은(는) 어떠세요? 지금 구매하시면 5% 추가 할인!');
+      this.updateProductSelectorOptions();
+      this.updatePricesInCart();
+    }
+  }
+
+  findSuggestedProduct() {
+    for (let k = 0; k < this.productList.length; k++) {
+      const product = this.productList[k];
+      if (product.id !== this.lastSelectedProduct && product.quantity > 0 && !product.suggestSale) {
+        return product;
+      }
+    }
+    return null;
   }
 
   updateProductSelectorOptions() {
@@ -184,7 +197,7 @@ export class App {
       return;
     }
 
-    const existingItem = this.cartDisplay.findItem(productToAdd.id);
+    const existingItem = this.cartDisplay.findItemByProductId(productToAdd.id);
 
     // 기존 아이템이 있는 경우 수량 증가 처리
     if (existingItem) {
@@ -219,37 +232,87 @@ export class App {
   handleCartInteraction(event) {
     const target = event.target;
 
-    if (target.classList.contains('quantity-change') || target.classList.contains('remove-item')) {
-      const productId = target.dataset.productId;
-      const itemElement = this.cartDisplay.findItem(productId);
-      const product = this.productList.find((p) => p.id === productId);
-
-      if (!product || !itemElement) return;
-
-      if (target.classList.contains('quantity-change')) {
-        const quantityChange = parseInt(target.dataset.change);
-        const quantityElement = itemElement.querySelector('.quantity-number');
-        const currentQuantity = parseInt(quantityElement.textContent);
-        const newQuantity = currentQuantity + quantityChange;
-
-        if (newQuantity > 0 && newQuantity <= product.quantity + currentQuantity) {
-          quantityElement.textContent = newQuantity;
-          product.quantity -= quantityChange;
-        } else if (newQuantity <= 0) {
-          product.quantity += currentQuantity;
-          this.cartDisplay.removeItem(productId);
-        } else {
-          alert('재고가 부족합니다.');
-        }
-      } else if (target.classList.contains('remove-item')) {
-        const quantityElement = itemElement.querySelector('.quantity-number');
-        const removedQuantity = parseInt(quantityElement.textContent);
-        product.quantity += removedQuantity;
-        this.cartDisplay.removeItem(productId);
-      }
-
-      this.calculateCartTotal();
-      this.updateProductSelectorOptions();
+    // 유효하지 않은 타겟인 경우 early return
+    if (!this.isValidCartInteractionTarget(target)) {
+      return;
     }
+
+    const productId = target.dataset.productId;
+    const itemElement = this.cartDisplay.findItemByProductId(productId);
+    const product = this.productList.find((p) => p.id === productId);
+
+    // 유효하지 않은 상품이나 아이템인 경우 early return
+    if (!this.isValidProductAndItem(product, itemElement)) {
+      return;
+    }
+
+    // 수량 변경 처리
+    if (target.classList.contains('quantity-change')) {
+      this.handleQuantityChange(target, itemElement, product, productId);
+    }
+
+    // 아이템 제거 처리
+    if (target.classList.contains('remove-item')) {
+      this.handleItemRemoval(itemElement, product, productId);
+    }
+
+    // 상태 업데이트
+    this.updateCartState();
+  }
+
+  isValidCartInteractionTarget(target) {
+    return target.classList.contains('quantity-change') || target.classList.contains('remove-item');
+  }
+
+  isValidProductAndItem(product, itemElement) {
+    return product && itemElement;
+  }
+
+  handleQuantityChange(target, itemElement, product, productId) {
+    const quantityChange = parseInt(target.dataset.change);
+    const quantityElement = itemElement.querySelector('.quantity-number');
+    const currentQuantity = parseInt(quantityElement.textContent);
+    const newQuantity = currentQuantity + quantityChange;
+
+    // 수량이 0 이하가 되는 경우 아이템 제거
+    if (newQuantity <= 0) {
+      this.removeItemFromCart(product, currentQuantity, productId);
+      return;
+    }
+
+    // 재고 부족 체크
+    if (!this.hasSufficientStock(product, currentQuantity, newQuantity)) {
+      alert('재고가 부족합니다.');
+      return;
+    }
+
+    // 수량 업데이트
+    this.updateItemQuantity(quantityElement, newQuantity, product, quantityChange);
+  }
+
+  handleItemRemoval(itemElement, product, productId) {
+    const quantityElement = itemElement.querySelector('.quantity-number');
+    const removedQuantity = parseInt(quantityElement.textContent);
+
+    this.removeItemFromCart(product, removedQuantity, productId);
+  }
+
+  hasSufficientStock(product, currentQuantity, newQuantity) {
+    return newQuantity <= product.quantity + currentQuantity;
+  }
+
+  updateItemQuantity(quantityElement, newQuantity, product, quantityChange) {
+    quantityElement.textContent = newQuantity;
+    product.quantity -= quantityChange;
+  }
+
+  removeItemFromCart(product, quantity, productId) {
+    product.quantity += quantity;
+    this.cartDisplay.removeItemByProductId(productId);
+  }
+
+  updateCartState() {
+    this.calculateCartTotal();
+    this.updateProductSelectorOptions();
   }
 }
