@@ -75,15 +75,22 @@ export function calculateQuantityBonus(totalQuantity) {
   let bonus = 0;
   let detail = '';
 
-  if (totalQuantity >= 30) {
-    bonus = 100;
-    detail = '대량구매(30개+) +100p';
-  } else if (totalQuantity >= 20) {
-    bonus = 50;
-    detail = '대량구매(20개+) +50p';
-  } else if (totalQuantity >= 10) {
-    bonus = 20;
-    detail = '대량구매(10개+) +20p';
+  switch (true) {
+    case totalQuantity >= 30:
+      bonus = 100;
+      detail = '대량구매(30개+) +100p';
+      break;
+    case totalQuantity >= 20:
+      bonus = 50;
+      detail = '대량구매(20개+) +50p';
+      break;
+    case totalQuantity >= 10:
+      bonus = 20;
+      detail = '대량구매(10개+) +20p';
+      break;
+    default:
+      bonus = 0;
+      detail = '';
   }
 
   return { bonus, detail };
