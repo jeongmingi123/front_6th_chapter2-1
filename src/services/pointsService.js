@@ -12,6 +12,39 @@ export function applyTuesdayBonus(basePoints) {
   return isTuesday ? basePoints * 2 : basePoints;
 }
 
+// 특정 제품이 장바구니에 있는지 확인
+function hasProductInCart(cartItemsArray, productList, productId) {
+  return cartItemsArray.some((item) => {
+    const product = productList.find((p) => p.id === item.id);
+    return product && product.id === productId;
+  });
+}
+
+// 키보드+마우스 세트 보너스 계산
+function calculateKeyboardMouseBonus(cartItemsArray, productList) {
+  const hasKeyboard = hasProductInCart(cartItemsArray, productList, PRODUCT_IDS.KEYBOARD);
+  const hasMouse = hasProductInCart(cartItemsArray, productList, PRODUCT_IDS.MOUSE);
+
+  if (hasKeyboard && hasMouse) {
+    return { bonus: 50, detail: '키보드+마우스 세트 +50p' };
+  }
+
+  return { bonus: 0, detail: '' };
+}
+
+// 풀세트 보너스 계산 (키보드+마우스+모니터암)
+function calculateFullSetBonus(cartItemsArray, productList) {
+  const hasKeyboard = hasProductInCart(cartItemsArray, productList, PRODUCT_IDS.KEYBOARD);
+  const hasMouse = hasProductInCart(cartItemsArray, productList, PRODUCT_IDS.MOUSE);
+  const hasMonitorArm = hasProductInCart(cartItemsArray, productList, PRODUCT_IDS.MONITOR_ARM);
+
+  if (hasKeyboard && hasMouse && hasMonitorArm) {
+    return { bonus: 100, detail: '풀세트 구매 +100p' };
+  }
+
+  return { bonus: 0, detail: '' };
+}
+
 // 세트 구매 보너스 포인트 계산
 export function calculateSetBonus(cartItems, productList) {
   let bonus = 0;
@@ -21,30 +54,17 @@ export function calculateSetBonus(cartItems, productList) {
   const cartItemsArray = Array.from(cartItems);
 
   // 키보드+마우스 세트 보너스
-  const hasKeyboard = cartItemsArray.some((item) => {
-    const product = productList.find((p) => p.id === item.id);
-    return product && product.id === PRODUCT_IDS.KEYBOARD;
-  });
-
-  const hasMouse = cartItemsArray.some((item) => {
-    const product = productList.find((p) => p.id === item.id);
-    return product && product.id === PRODUCT_IDS.MOUSE;
-  });
-
-  if (hasKeyboard && hasMouse) {
-    bonus += 50;
-    details.push('키보드+마우스 세트 +50p');
+  const keyboardMouseBonus = calculateKeyboardMouseBonus(cartItemsArray, productList);
+  bonus += keyboardMouseBonus.bonus;
+  if (keyboardMouseBonus.detail) {
+    details.push(keyboardMouseBonus.detail);
   }
 
-  // 풀세트 보너스 (키보드+마우스+모니터암)
-  const hasMonitorArm = cartItemsArray.some((item) => {
-    const product = productList.find((p) => p.id === item.id);
-    return product && product.id === PRODUCT_IDS.MONITOR_ARM;
-  });
-
-  if (hasKeyboard && hasMouse && hasMonitorArm) {
-    bonus += 100;
-    details.push('풀세트 구매 +100p');
+  // 풀세트 보너스
+  const fullSetBonus = calculateFullSetBonus(cartItemsArray, productList);
+  bonus += fullSetBonus.bonus;
+  if (fullSetBonus.detail) {
+    details.push(fullSetBonus.detail);
   }
 
   return { bonus, details };
