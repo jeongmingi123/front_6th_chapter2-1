@@ -84,12 +84,12 @@ export class CartDisplay {
     return this.element.children;
   }
 
-  findItem(productId) {
+  findItemByProductId(productId) {
     return this.element.querySelector(`#${productId}`);
   }
 
-  removeItem(productId) {
-    const item = this.findItem(productId);
+  removeItemByProductId(productId) {
+    const item = this.findItemByProductId(productId);
     if (item) {
       item.remove();
     }
