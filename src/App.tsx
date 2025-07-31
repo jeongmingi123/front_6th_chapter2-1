@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Header } from './components/Header';
-import { ProductSelector } from './components/ProductSelector';
-import { CartDisplay } from './components/CartDisplay';
-import { OrderSummary } from './components/OrderSummary';
-import { ManualManager } from './components/ManualManager';
+import { Header } from './components/layout/Header';
+import { ProductSelector } from './components/selector/ProductSelector';
+import { Cart } from './components/cart/Cart';
+import { OrderSummary } from './components/order/OrderSummary';
+import { ManualManager } from './components/manual/ManualManager';
 import { Product, OrderSummary as OrderSummaryType } from './types';
 import { INITIAL_PRODUCTS } from './data/products';
 import { applyLightningSale, applyRecommendationSale } from './services/saleService';
 import { useCart } from './hooks/useCart';
 import { calculatePointsInfo } from './services/cartService';
+import { CART_CONSTANTS, COMMON_CONSTANTS } from './constants';
 
 export const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(JSON.parse(JSON.stringify(INITIAL_PRODUCTS)));
@@ -102,7 +103,7 @@ export const App: React.FC = () => {
 
       const newQuantity = cartItem.quantity + change;
 
-      if (newQuantity <= 0) {
+      if (newQuantity <= COMMON_CONSTANTS.ZERO) {
         // 아이템 제거
         removeItem(productId);
         // 재고 복구
@@ -148,7 +149,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleOrder = useCallback(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === CART_CONSTANTS.EMPTY_CART) {
       alert('장바구니가 비어있습니다.');
       return;
     }
@@ -197,7 +198,7 @@ export const App: React.FC = () => {
           <div className="space-y-6">
             <ProductSelector products={products} onProductSelect={handleProductSelect} onAddToCart={handleAddToCart} />
 
-            <CartDisplay
+            <Cart
               items={cartItems}
               products={products}
               onQuantityChange={handleQuantityChange}
