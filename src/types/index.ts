@@ -46,7 +46,7 @@ export interface ProductSelectorProps {
   onAddToCart: () => void;
 }
 
-export interface CartDisplayProps {
+export interface CartProps {
   items: CartItem[];
   products: Product[];
   onQuantityChange: (productId: string, change: number) => void;
