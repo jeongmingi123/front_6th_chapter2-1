@@ -1,5 +1,5 @@
 import React from 'react';
-import { CartProps, Product } from '../../types';
+import { CartProps } from '../../types';
 import { CartProductPrice } from './CartProductPrice';
 import { CART_CONSTANTS, PRODUCT_CONSTANTS } from '../../constants';
 import { findProductById } from '../../utils/productUtils';
